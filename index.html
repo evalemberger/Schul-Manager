@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schul Manager</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body {
+  font-family: Arial;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  margin: 0;
+  padding: 20px;
+}
+
+.container { max-width: 500px; margin: auto; }
+
+.card {
+  background: white;
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 60px;
+  padding: 8px;
+  margin: 5px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #4facfe;
+  color: white;
+  border: none;
+  border-radius: 10px;
+}
+
+.result { font-weight: bold; margin-top: 10px; }
+</style>
+</head>
+
+<body>
+
+<h2 style="color:white;text-align:center;">📊 Schul Manager</h2>
+
+<div class="container">
+
+<div class="card">
+<h3>Biologie</h3>
+
+<input id="t1" type="number" min="1" max="5">
+<input id="t2" type="number">
+<input id="t3" type="number">
+<input id="t4" type="number">
+
+<br>
+<input id="mitarbeit" type="number" placeholder="Mitarbeit">
+
+<br>
+<label><input type="checkbox" id="heftCheck"> Heft</label>
+<input id="heft" type="number" placeholder="Heft">
+
+<button onclick="calculate()">Berechnen</button>
+
+<div class="result" id="result"></div>
+</div>
+
+</div>
+
+<script>
+function saveData() {
+  let data = {
+    t1: t1.value,
+    t2: t2.value,
+    t3: t3.value,
+    t4: t4.value,
+    mitarbeit: mitarbeit.value,
+    heft: heft.value,
+    heftCheck: heftCheck.checked
+  };
+  localStorage.setItem("noten", JSON.stringify(data));
+}
+
+function loadData() {
+  let data = JSON.parse(localStorage.getItem("noten"));
+  if (!data) return;
+
+  t1.value = data.t1 || "";
+  t2.value = data.t2 || "";
+  t3.value = data.t3 || "";
+  t4.value = data.t4 || "";
+  mitarbeit.value = data.mitarbeit || "";
+  heft.value = data.heft || "";
+  heftCheck.checked = data.heftCheck || false;
+}
+
+function gradeToPercent(g) {
+  return [null,90,75,65,55,30][g];
+}
+
+function percentToGrade(p) {
+  if (p < 50) return 5;
+  if (p < 60) return 4;
+  if (p < 70) return 3;
+  if (p < 80) return 2;
+  return 1;
+}
+
+function avg(arr) {
+  let v = arr.filter(x=>x);
+  return v.length ? v.reduce((a,b)=>a+b)/v.length : null;
+}
+
+function calculate() {
+  let tests = [
+    gradeToPercent(t1.value),
+    gradeToPercent(t2.value),
+    gradeToPercent(t3.value),
+    gradeToPercent(t4.value)
+  ];
+
+  let testAvg = avg(tests);
+  let mit = gradeToPercent(mitarbeit.value);
+
+  if (!testAvg || !mit) return result.innerText="Fehlt etwas!";
+
+  let total;
+
+  if (heftCheck.checked) {
+    let h = gradeToPercent(heft.value);
+    total = testAvg*0.6 + mit*0.3 + h*0.1;
+  } else {
+    total = testAvg*0.6 + mit*0.4;
+  }
+
+  result.innerText = total.toFixed(1)+"% → Note "+percentToGrade(total);
+
+  saveData();
+}
+
+loadData();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
